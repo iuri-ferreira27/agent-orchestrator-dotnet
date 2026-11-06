@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AgentOrchestrator.Core/AgentOrchestrator.Core.csproj" />
+    <Project Path="src/AgentOrchestrator.Web/AgentOrchestrator.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AgentOrchestrator.Tests/AgentOrchestrator.Tests.csproj" />
+  </Folder>
+</Solution>
