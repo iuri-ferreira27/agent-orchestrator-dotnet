@@ -1,0 +1,30 @@
+# CI: compila e roda os testes em todo pull request e em todo push para main e dev.
+name: CI
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Instalar o .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restaurar pacotes
+        run: dotnet restore AgentOrchestrator.slnx
+
+      - name: Compilar
+        run: dotnet build AgentOrchestrator.slnx --no-restore --configuration Release
+
+      - name: Rodar testes
+        run: dotnet test AgentOrchestrator.slnx --no-build --configuration Release
