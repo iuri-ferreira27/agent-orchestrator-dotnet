@@ -1,3 +1,4 @@
+using AgentOrchestrator.Core.Models;
 using AgentOrchestrator.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,6 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Cliente de IA: por enquanto o simulado (sem custo).
+// Para usar um provedor real, basta registrar outra implementação de IModelClient aqui.
+builder.Services.AddSingleton<IModelClient, FakeModelClient>(_ => new FakeModelClient());
 
 var app = builder.Build();
 
