@@ -1,0 +1,38 @@
+@using AgentOrchestrator.Core.Orchestration
+
+@if (Plan.IsFallback)
+{
+    <div class="alert alert-warning">
+        O planejador não devolveu um plano em formato válido, então a tarefa inteira virou uma única
+        subtarefa de dificuldade média. O resultado continua correto, mas sem divisão nem economia por roteamento.
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Subtarefa</th>
+                <th>Dificuldade</th>
+                <th>Modelo (roteado)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var sub in Plan.SubTasks)
+            {
+                <tr>
+                    <td>@sub.Id</td>
+                    <td>@sub.Description</td>
+                    <td><TierBadge Tier="sub.Tier" /></td>
+                    <td><code>@Router.ModelFor(sub.Tier, RoutingMode.Routed)</code></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ExecutionPlan Plan { get; set; } = default!;
+    [Parameter, EditorRequired] public IModelRouter Router { get; set; } = default!;
+}

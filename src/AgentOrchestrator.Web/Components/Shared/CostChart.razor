@@ -1,0 +1,29 @@
+@using AgentOrchestrator.Web.Services
+
+@* Gráfico de barras horizontal em SVG puro: a largura de cada barra é proporcional ao custo. *@
+<svg viewBox="0 0 600 110" class="w-100 cost-chart" role="img" aria-label="Comparação de custo total">
+    <text x="0" y="28" class="chart-label">Tudo no forte</text>
+    <rect x="130" y="12" width="@BaselineWidth" height="26" rx="3" class="bar-baseline" />
+    <text x="@(130 + BaselineWidth + 6)" y="30" class="chart-value">@Format.Money(Baseline)</text>
+
+    <text x="0" y="78" class="chart-label">Roteado</text>
+    <rect x="130" y="62" width="@RoutedWidth" height="26" rx="3" class="bar-routed" />
+    <text x="@(130 + RoutedWidth + 6)" y="80" class="chart-value">@Format.Money(Routed)</text>
+</svg>
+
+@code {
+    private const double MaxBar = 330;
+
+    [Parameter, EditorRequired] public decimal Baseline { get; set; }
+    [Parameter, EditorRequired] public decimal Routed { get; set; }
+
+    private decimal Max => Math.Max(Baseline, Routed);
+
+    private string BaselineWidth => Scale(Baseline);
+    private string RoutedWidth => Scale(Routed);
+
+    // Cultura invariante: o SVG exige ponto decimal. Largura mínima de 2 para a barra não sumir.
+    private string Scale(decimal value) =>
+        (Max <= 0 ? 2.0 : Math.Max(2.0, (double)(value / Max) * MaxBar))
+            .ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+}
