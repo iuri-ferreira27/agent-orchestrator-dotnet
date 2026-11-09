@@ -86,11 +86,14 @@ public sealed class Orchestrator
         progress?.Report("Planejando...");
         var (plan, plannerCall) = await _planner.PlanAsync(task, ct);
 
-        progress?.Report("Executando linha de base (tudo no modelo pesado)...");
-        var baseline = await ExecuteAsync(plan, plannerCall, RoutingMode.AllHeavy, progress, ct);
-
+        // O roteado roda PRIMEIRO de propósito: o cache de prompt aquecido por uma execução
+        // ajuda a seguinte. Assim, qualquer vantagem de cache fica com a linha de base,
+        // e a economia medida é conservadora (nunca inflada).
         progress?.Report("Executando com roteamento por dificuldade...");
         var routed = await ExecuteAsync(plan, plannerCall, RoutingMode.Routed, progress, ct);
+
+        progress?.Report("Executando linha de base (tudo no modelo pesado)...");
+        var baseline = await ExecuteAsync(plan, plannerCall, RoutingMode.AllHeavy, progress, ct);
 
         var savings = CostCalculator.SavingsPercent(baseline.TotalCost, routed.TotalCost);
         return new ComparisonResult(task, plan, baseline, routed, savings);
