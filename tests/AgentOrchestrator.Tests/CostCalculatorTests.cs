@@ -19,6 +19,15 @@ public class CostCalculatorTests
     }
 
     [Fact]
+    public void Calculate_IncluiGravacaoNoCache()
+    {
+        var price = new ModelPrice("m", 10m, 20m, 1m, CacheWritePerMillion: 12.5m);
+        var usage = new TokenUsage(0, 0, CacheWriteTokens: 2_000_000);
+
+        Assert.Equal(25m, CostCalculator.Calculate(usage, price));
+    }
+
+    [Fact]
     public void Calculate_SemTokens_CustoZero()
     {
         Assert.Equal(0m, CostCalculator.Calculate(TokenUsage.Zero, TestPrice));
@@ -27,9 +36,10 @@ public class CostCalculatorTests
     [Fact]
     public void TokenUsage_Soma()
     {
-        var total = new TokenUsage(10, 20, 30) + new TokenUsage(1, 2, 3);
+        var total = new TokenUsage(10, 20, 30, 40) + new TokenUsage(1, 2, 3, 4);
 
-        Assert.Equal(new TokenUsage(11, 22, 33), total);
+        Assert.Equal(new TokenUsage(11, 22, 33, 44), total);
+        Assert.Equal(11 + 33 + 44, total.TotalInputTokens);
     }
 
     [Theory]

@@ -15,7 +15,8 @@ public static class CostCalculator
 
         return usage.InputTokens * price.InputPerMillion / OneMillion
              + usage.OutputTokens * price.OutputPerMillion / OneMillion
-             + usage.CacheReadTokens * price.CacheReadPerMillion / OneMillion;
+             + usage.CacheReadTokens * price.CacheReadPerMillion / OneMillion
+             + usage.CacheWriteTokens * price.CacheWritePerMillion / OneMillion;
     }
 
     /// <summary>
