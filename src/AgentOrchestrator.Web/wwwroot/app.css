@@ -58,3 +58,51 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+/* --- Agent Orchestrator --- */
+.num, .num td, .num th, .display-5, .fs-4 {
+    font-variant-numeric: tabular-nums;
+}
+
+pre.answer {
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #f6f8fa;
+    border: 1px solid #dee2e6;
+    border-radius: .375rem;
+    padding: 1rem;
+}
+
+.log-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.cost-chart .chart-label { font-size: 14px; fill: #495057; }
+.cost-chart .chart-value { font-size: 13px; fill: #212529; font-variant-numeric: tabular-nums; }
+.cost-chart .bar-baseline { fill: #dc3545; }
+.cost-chart .bar-routed { fill: #198754; }
+
+.flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+}
+
+.flow-box {
+    border: 2px solid #1b6ec2;
+    border-radius: .5rem;
+    padding: .5rem .9rem;
+    background: #eef5fc;
+    font-weight: 600;
+}
+
+.flow-box-end {
+    border-color: #198754;
+    background: #e9f6ef;
+}
+
+.flow-arrow {
+    font-size: 1.5rem;
+    color: #6c757d;
+}

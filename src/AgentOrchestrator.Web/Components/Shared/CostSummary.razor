@@ -1,0 +1,53 @@
+@using AgentOrchestrator.Core.Orchestration
+@using AgentOrchestrator.Web.Services
+
+<div class="card mb-3">
+    <div class="card-body">
+        @if (Comparison is not null)
+        {
+            <div class="row text-center g-3 align-items-center num">
+                <div class="col-md-4">
+                    <div class="text-muted small">Linha de base (tudo no forte)</div>
+                    <div class="fs-4">@Format.Money(Comparison.Baseline.TotalCost)</div>
+                    <div class="small text-muted">@Format.Number(Comparison.Baseline.TotalUsage.TotalInputTokens + Comparison.Baseline.TotalUsage.OutputTokens) tokens</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Roteado</div>
+                    <div class="fs-4">@Format.Money(Comparison.Routed.TotalCost)</div>
+                    <div class="small text-muted">@Format.Number(Comparison.Routed.TotalUsage.TotalInputTokens + Comparison.Routed.TotalUsage.OutputTokens) tokens</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Economia</div>
+                    <div class="display-5 fw-bold @(Comparison.SavingsPercent >= 0 ? "text-success" : "text-danger")">@Format.Percent(Comparison.SavingsPercent)</div>
+                </div>
+            </div>
+        }
+        else if (Single is not null)
+        {
+            <div class="row text-center g-3 num">
+                <div class="col-md-4">
+                    <div class="text-muted small">Custo total</div>
+                    <div class="fs-4">@Format.Money(Single.TotalCost)</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Tokens</div>
+                    <div class="fs-4">@Format.Number(Single.TotalUsage.TotalInputTokens + Single.TotalUsage.OutputTokens)</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Duração</div>
+                    <div class="fs-4">@Format.Millis(Single.Duration) ms</div>
+                </div>
+            </div>
+        }
+        @if (IsSimulated)
+        {
+            <div class="text-center text-muted small mt-2">(simulado)</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public ComparisonResult? Comparison { get; set; }
+    [Parameter] public ExecutionResult? Single { get; set; }
+    [Parameter] public bool IsSimulated { get; set; }
+}
