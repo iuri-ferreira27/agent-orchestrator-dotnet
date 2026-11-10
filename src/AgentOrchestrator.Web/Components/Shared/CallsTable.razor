@@ -1,0 +1,40 @@
+@using AgentOrchestrator.Core.Orchestration
+@using AgentOrchestrator.Web.Services
+
+<div class="table-responsive">
+    <table class="table table-sm table-striped align-middle num">
+        <thead>
+            <tr>
+                <th>Papel</th>
+                <th>Subtarefa</th>
+                <th>Modelo</th>
+                <th class="text-end">Entrada</th>
+                <th class="text-end">Cache lido</th>
+                <th class="text-end">Cache gravado</th>
+                <th class="text-end">Saída</th>
+                <th class="text-end">Custo</th>
+                <th class="text-end">Duração (ms)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var call in Calls)
+            {
+                <tr>
+                    <td>@call.Role</td>
+                    <td>@(call.SubTaskId?.ToString() ?? "-")</td>
+                    <td><code>@call.Model</code></td>
+                    <td class="text-end">@Format.Number(call.Usage.InputTokens)</td>
+                    <td class="text-end">@Format.Number(call.Usage.CacheReadTokens)</td>
+                    <td class="text-end">@Format.Number(call.Usage.CacheWriteTokens)</td>
+                    <td class="text-end">@Format.Number(call.Usage.OutputTokens)</td>
+                    <td class="text-end">@Format.Money(call.Cost)</td>
+                    <td class="text-end">@Format.Millis(call.Duration)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<CallRecord> Calls { get; set; } = Array.Empty<CallRecord>();
+}

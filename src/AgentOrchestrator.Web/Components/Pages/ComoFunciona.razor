@@ -1,0 +1,67 @@
+@page "/como-funciona"
+@using AgentOrchestrator.Core.Costs
+@using AgentOrchestrator.Web.Services
+@inject PriceTable Prices
+@inject PriceNote Note
+
+<PageTitle>Como funciona</PageTitle>
+
+<h1 class="h3">Como funciona</h1>
+
+<h2 class="h5 mt-4">O problema</h2>
+<p>
+    Usar sempre o modelo de IA mais forte para qualquer tarefa funciona, mas sai caro: boa parte do trabalho
+    (formatar, renomear, resumir) não precisa de um modelo de ponta, e o custo cresce a cada chamada.
+</p>
+
+<h2 class="h5 mt-4">A solução</h2>
+<ul>
+    <li><strong>Planejador:</strong> um modelo forte quebra a tarefa em subtarefas e marca a dificuldade de cada uma.</li>
+    <li><strong>Roteamento:</strong> subtarefas leves vão para o modelo econômico, médias para o intermediário e só as pesadas usam o forte.</li>
+    <li><strong>Execução paralela:</strong> as subtarefas rodam ao mesmo tempo, o que reduz o tempo total.</li>
+    <li><strong>Cache de prompt:</strong> as instruções repetidas entre chamadas são cobradas a um preço menor depois da primeira vez.</li>
+    <li><strong>Comparação:</strong> o mesmo plano é executado "tudo no forte" e "roteado", e a diferença de custo vira a economia.</li>
+</ul>
+
+<h2 class="h5 mt-4">Fluxo</h2>
+<div class="flow">
+    <div class="flow-box">Tarefa</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box">Planejador</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box">Subtarefas</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box">Roteador</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box">Executores em paralelo</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box flow-box-end">Resultado + Custo</div>
+</div>
+
+<h2 class="h5 mt-4">Modelos e preços configurados</h2>
+<div class="table-responsive">
+    <table class="table table-sm table-striped num">
+        <thead>
+            <tr>
+                <th>Modelo</th>
+                <th class="text-end">Entrada / 1M</th>
+                <th class="text-end">Saída / 1M</th>
+                <th class="text-end">Cache lido / 1M</th>
+                <th class="text-end">Cache gravado / 1M</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Prices.All)
+            {
+                <tr>
+                    <td><code>@p.Model</code></td>
+                    <td class="text-end">@Format.Money(p.InputPerMillion, 2)</td>
+                    <td class="text-end">@Format.Money(p.OutputPerMillion, 2)</td>
+                    <td class="text-end">@Format.Money(p.CacheReadPerMillion, 2)</td>
+                    <td class="text-end">@Format.Money(p.CacheWritePerMillion, 2)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<div class="alert alert-warning">@Note.Text</div>

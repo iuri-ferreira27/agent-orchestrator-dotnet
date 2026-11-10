@@ -7,8 +7,13 @@ namespace AgentOrchestrator.Core.Models;
 /// <param name="Prompt">Texto da tarefa.</param>
 /// <param name="SystemPrompt">Instruções fixas de comportamento (opcional). É a parte que mais se beneficia de cache.</param>
 /// <param name="MaxOutputTokens">Limite de tokens na resposta. Limitar a saída também controla o custo.</param>
+/// <param name="CacheSystemPrompt">
+/// Pede ao provedor para guardar o SystemPrompt em cache. Chamadas seguintes com o mesmo
+/// SystemPrompt pagam bem menos por essa parte (prompt caching).
+/// </param>
 public sealed record ModelRequest(
     string Model,
     string Prompt,
     string? SystemPrompt = null,
-    int MaxOutputTokens = 1024);
+    int MaxOutputTokens = 1024,
+    bool CacheSystemPrompt = false);

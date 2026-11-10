@@ -1,0 +1,21 @@
+@using AgentOrchestrator.Core.Orchestration
+
+<span class="badge @CssClass">@Label</span>
+
+@code {
+    [Parameter, EditorRequired] public ModelTier Tier { get; set; }
+
+    private string Label => Tier switch
+    {
+        ModelTier.Light => "Leve",
+        ModelTier.Standard => "Média",
+        _ => "Pesada"
+    };
+
+    private string CssClass => Tier switch
+    {
+        ModelTier.Light => "text-bg-success",
+        ModelTier.Standard => "text-bg-warning",
+        _ => "text-bg-danger"
+    };
+}

@@ -9,4 +9,5 @@ public sealed record ModelPrice(
     string Model,
     decimal InputPerMillion,
     decimal OutputPerMillion,
-    decimal CacheReadPerMillion);
+    decimal CacheReadPerMillion,
+    decimal CacheWritePerMillion = 0);

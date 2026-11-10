@@ -1,7 +1,211 @@
-﻿@page "/"
+@page "/"
+@rendermode InteractiveServer
+@implements IDisposable
+@using AgentOrchestrator.Core.Orchestration
+@using AgentOrchestrator.Core.Providers
+@using AgentOrchestrator.Web.Components.Shared
+@using AgentOrchestrator.Web.Services
+@inject Orchestrator Orchestrator
+@inject IModelRouter Router
+@inject RunHistory History
+@inject ProviderInfo Provider
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Orquestrador</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="d-flex align-items-center gap-2 mb-1">
+    <h1 class="h3 mb-0">Orquestrador</h1>
+    <span class="badge @(Provider.IsSimulated ? "text-bg-secondary" : "text-bg-primary")">Provedor: @Provider.Name</span>
+</div>
+<p class="text-muted">Divide a tarefa em subtarefas, escolhe o modelo mais barato que dá conta de cada uma e executa em paralelo.</p>
 
-Welcome to your new app.
+@if (Provider.IsSimulated)
+{
+    <div class="alert alert-info">Modo simulado: nenhuma API é chamada e o custo é estimado com preços de exemplo.</div>
+}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <label for="tarefa" class="form-label fw-semibold">Tarefa</label>
+        <textarea id="tarefa" class="form-control mb-3" rows="6" @bind="_task" @bind:event="oninput" disabled="@_running"></textarea>
+
+        <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label for="modo" class="form-label fw-semibold">Modo</label>
+                <select id="modo" class="form-select" @bind="_mode" disabled="@_running">
+                    <option value="@RunMode.Compare">Comparar (tudo no forte × roteado)</option>
+                    <option value="@RunMode.Routed">Somente roteado</option>
+                    <option value="@RunMode.AllHeavy">Somente tudo no forte</option>
+                </select>
+            </div>
+            <div class="col-md-6 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="RunAsync" disabled="@(_running || string.IsNullOrWhiteSpace(_task))">
+                    @if (_running)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                        <span>Executando...</span>
+                    }
+                    else
+                    {
+                        <span>Executar</span>
+                    }
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@(!_running)">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_log.Count > 0)
+{
+    <div class="card mb-4">
+        <div class="card-header">Progresso</div>
+        <ul class="list-group list-group-flush log-list">
+            @foreach (var line in _log)
+            {
+                <li class="list-group-item py-1 small">@line</li>
+            }
+        </ul>
+    </div>
+}
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger" role="alert">@_error</div>
+}
+
+@if (_comparison is not null)
+{
+    <h2 class="h4">Resultado da comparação</h2>
+    <CostSummary Comparison="_comparison" IsSimulated="_resultSimulated" />
+
+    <div class="card mb-4">
+        <div class="card-header">Custo total por modo</div>
+        <div class="card-body">
+            <CostChart Baseline="_comparison.Baseline.TotalCost" Routed="_comparison.Routed.TotalCost" />
+        </div>
+    </div>
+
+    <h3 class="h5">Plano</h3>
+    <PlanTable Plan="_comparison.Plan" Router="Router" />
+
+    <h3 class="h5">Chamadas</h3>
+    <ul class="nav nav-pills mb-2">
+        <li class="nav-item">
+            <button class="nav-link @(_showBaseline ? "" : "active")" @onclick="() => _showBaseline = false">Roteado</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(_showBaseline ? "active" : "")" @onclick="() => _showBaseline = true">Linha de base</button>
+        </li>
+    </ul>
+    <CallsTable Calls="(_showBaseline ? _comparison.Baseline : _comparison.Routed).Calls" />
+
+    <h3 class="h5">Saídas do modo roteado</h3>
+    <pre class="answer">@BuildAnswer(_comparison.Routed)</pre>
+}
+else if (_single is not null)
+{
+    <h2 class="h4">Resultado (@(_single.Execution.Mode == RoutingMode.Routed ? "roteado" : "tudo no forte"))</h2>
+    <CostSummary Single="_single.Execution" IsSimulated="_resultSimulated" />
+
+    <h3 class="h5">Plano</h3>
+    <PlanTable Plan="_single.Plan" Router="Router" />
+
+    <h3 class="h5">Chamadas</h3>
+    <CallsTable Calls="_single.Execution.Calls" />
+
+    <h3 class="h5">Resposta final</h3>
+    <pre class="answer">@_single.FinalAnswer</pre>
+}
+
+@code {
+    private enum RunMode { Compare, Routed, AllHeavy }
+
+    private string _task =
+        "Revise o script Lua de recompensa diária do servidor. Verifique se há bug de duplicação de itens. " +
+        "Sugira nomes melhores para as variáveis. Avalie a segurança contra jogadores que repetem o comando muito rápido. " +
+        "Escreva um resumo das mudanças para o changelog.";
+
+    private RunMode _mode = RunMode.Compare;
+    private bool _running;
+    private bool _showBaseline;
+    private bool _resultSimulated;
+    private string? _error;
+    private readonly List<string> _log = new();
+    private ComparisonResult? _comparison;
+    private OrchestrationResult? _single;
+    private CancellationTokenSource? _cts;
+
+    private async Task RunAsync()
+    {
+        if (_running || string.IsNullOrWhiteSpace(_task)) return;
+
+        _running = true;
+        _error = null;
+        _comparison = null;
+        _single = null;
+        _showBaseline = false;
+        _log.Clear();
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
+
+        // O progresso chega de outras threads (subtarefas em paralelo), por isso o InvokeAsync.
+        // Não uso Progress<T> porque ele posta no SynchronizationContext e a ordem não é garantida.
+        var progress = new InlineProgress(msg => InvokeAsync(() =>
+        {
+            _log.Add($"{DateTime.Now:HH:mm:ss}  {msg}");
+            StateHasChanged();
+        }));
+
+        try
+        {
+            if (_mode == RunMode.Compare)
+            {
+                _comparison = await Orchestrator.CompareAsync(_task, progress, ct);
+                _resultSimulated = Provider.IsSimulated;
+                History.Add(_comparison, Provider.IsSimulated);
+            }
+            else
+            {
+                var routing = _mode == RunMode.Routed ? RoutingMode.Routed : RoutingMode.AllHeavy;
+                _single = await Orchestrator.RunAsync(_task, routing, progress, ct);
+                _resultSimulated = Provider.IsSimulated;
+                History.Add(_single, routing, Provider.IsSimulated);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _error = "Execução cancelada.";
+        }
+        catch (ModelClientException ex)
+        {
+            _error = $"Falha ao falar com o provedor {ex.Provider}: {ex.Message}";
+        }
+        catch (InvalidOperationException ex)
+        {
+            _error = $"Não foi possível executar: {ex.Message}";
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _error = $"Configuração incompleta: {ex.Message}";
+        }
+        finally
+        {
+            _running = false;
+            _cts?.Dispose();
+            _cts = null;
+        }
+    }
+
+    private void Cancel() => _cts?.Cancel();
+
+    private static string BuildAnswer(ExecutionResult execution) =>
+        string.Join("\n\n", execution.Results.OrderBy(r => r.SubTask.Id).Select(r =>
+            $"### Subtarefa {r.SubTask.Id}: {r.SubTask.Description}\n{r.Output}"));
+
+    public void Dispose() => _cts?.Cancel();
+
+    private sealed class InlineProgress(Action<string> report) : IProgress<string>
+    {
+        public void Report(string value) => report(value);
+    }
+}
